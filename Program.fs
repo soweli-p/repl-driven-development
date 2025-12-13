@@ -34,10 +34,12 @@ type MainWindow() as this =
             [ nameof keyUpSub ], keyUpSub 
           ]
         base.Title <- "Cubicle"
-        base.Height <- 400.0
-        base.Width <- 400.0
 
-        Program.mkSimple Update.initFn Update.updateFn View.viewFn
+        let res = new Vector(400, 400)
+        base.Width <- res.X
+        base.Height <- res.Y
+
+        Program.mkSimple Update.initFn Update.updateFn (View.viewFn res)
         |> Program.withHost this
         |> Program.withSubscription subscriptions
         |> Program.run
@@ -66,3 +68,4 @@ module Program =
             .UsePlatformDetect()
             .UseSkia()
             .StartWithClassicDesktopLifetime(args)
+
