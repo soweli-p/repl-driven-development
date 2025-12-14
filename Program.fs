@@ -35,7 +35,7 @@ type MainWindow() as this =
           ]
         base.Title <- "Cubicle"
 
-        let res = new Vector(400, 400)
+        let res = new Vector(800, 800)
         base.Width <- res.X
         base.Height <- res.Y
 
