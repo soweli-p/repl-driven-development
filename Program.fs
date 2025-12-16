@@ -35,11 +35,12 @@ type MainWindow() as this =
           ]
         base.Title <- "Cubicle"
 
-        let res = new Vector(800, 800)
+        let res = new Vector(1920, 800)
+        let getRes () = new Vector(this.Width, this.Height)
         base.Width <- res.X
         base.Height <- res.Y
 
-        Program.mkSimple Update.initFn Update.updateFn (View.viewFn res)
+        Program.mkSimple Update.initFn Update.updateFn (View.viewFn getRes)
         |> Program.withHost this
         |> Program.withSubscription subscriptions
         |> Program.run

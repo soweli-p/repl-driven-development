@@ -37,10 +37,22 @@ open Avalonia
 open Avalonia.Input
 open Avalonia
 open FSharpPlus.Lens
+open Avalonia.FuncUI.DSL
+open Avalonia.FuncUI.Types
+
+open Avalonia.Controls
+open Elmish
+
+open Cubicle.Update
+open Avalonia
+open Avalonia.Media.Imaging
+open Avalonia.Media
 
 
 
 
 open Cubicle.Update.Lenses
+open Cubicle.View.Background
+open Cubicle.View.Background.Clouds
 open System.Threading.Tasks
 Task.Run(fun () -> Program.main [||])
