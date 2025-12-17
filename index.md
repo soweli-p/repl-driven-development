@@ -16,17 +16,18 @@ The bigger a software gets, the more painful and slow it becomes to debug and mo
 ```
 
 Typical LISP repl has many features your average modern repl lacks:
-  * ability to load entire project into repl
-  * ability to modify any function (compared to just adding new function with same name)
-  * advanced error handling - if your expression throws an error, repl acts like  interactive debugger - it opens new  sub-repl which has all context of faulty function.
-  * ability to persist entire repl state, with all variables and memory intact into a file. So u can easily restore it for next sessions 
-  * ability to attach to existing remote process and execute repl commands in it
+
+* ability to load entire project into repl
+* ability to modify any function (compared to just adding new function with same name)
+* advanced error handling - if your expression throws an error, repl acts like  interactive debugger - it opens new  sub-repl which has all context of faulty function.
+* ability to persist entire repl state, with all variables and memory intact into a file. So u can easily restore it for next sessions 
+* ability to attach to existing remote process and execute repl commands in it
 Lisp machines were a pinnacle of such magic. All programs shared a single large address space, so user could inspect, evaluate or modify any function of any program on their computer. Instead of `sh` executing binaries, they had lisp repl executing lisp functions.
 
 One notable example of lisps is [Clojure](https://clojure.org/). It is modern language, with strong focus on functional programming which works on top of JVM. And good repl is [one of it's most compelling features](https://clojure.org/guides/repl/introduction). And honestly, by discovering and trying out this language I fell in love with repl driven development. So I've started wondering - why not use same approach, but in my favorite F#?
 
 
-## Improving f# repl
+## Improving F# REPL
 
 For being actual development tool, dotnet fsi lacks 2 important features.
 
@@ -39,15 +40,15 @@ First feature is easily solvable. As fsi supports loading of DDLs, you just need
 
 But without second feature repl as dev tool loses it's core benefit - fast feedback loop. How it even differs from regular edit-compile-run cycle if u need for every minor change recompile project, restart repl and re-reference all dlls?
 
-Modifying .net assembly in runtime is , thankfully, relatively easy, and there are many libraries, like [Harmony]() that do this. Of course, there are still clr limitations as we cannot identify existing types, change function signatures, or modify generic functions.
+Modifying .net assembly in runtime is, thankfully, relatively easy, and there are many libraries, like [Harmony](https://github.com/pardeike/Harmony) that do this. Of course, there are still clr limitations as we cannot identify existing types, change function signatures, or modify generic functions.
 
 
-And to fix those limitations I've made [fsix](), a repl which contains these features as well as some additional niceties. In next chapter, I will demonstrate how repl driven development might increase your development speed and comfort.
+And to fix those limitations I've made [fsix](https://github.com/soweli-p/FsiX), a repl which contains these features as well as some additional niceties. In next chapter, I will demonstrate how repl driven development might increase your development speed and comfort.
 
 
-## Creating a simple platformer game in f#
+## Creating a simple platformer game in F#
 
-For demonstration lets create simple video game - because it's fun and because it's a perfect place where interactive programming really shines. We will use [Avalonia.FuncUI]() for drawing and IO. Sure, this is UI library, not gamedev lib. But it is very simple, f# friendly, supports everything we need and has support for [Elmish]() mve pattern, which is functional and transforms perfectly onto classical gameloop pattern.
+For demonstration lets create simple video game - because it's fun and because it's a perfect place where interactive programming really shines. We will use [Avalonia.FuncUI](https://funcui.avaloniaui.net/) for drawing and IO. Sure, this is UI library, not gamedev lib. But it is very simple, f# friendly, supports everything we need and has support for [Elmish](https://elmish.github.io/elmish/) MVU pattern, which is functional and transforms perfectly onto classical gameloop pattern.
 
 
 ### Basic architecture
@@ -56,6 +57,7 @@ Our project will contain 3 core files:
 
 * Update.fs, which contains our state type, event type and function which on some event updates state:
 ``` fsharp
+
 module Cubicle.Update
 open Avalonia.Input
 
@@ -69,10 +71,12 @@ type Event =
 
 let initFn (): GameState = ()
 let updateFn event state = state
+
 ```
 
 * View.fs, which contains a function which creates a view model for given state:
 ```fsharp
+
 module Cubicle.View
 open Avalonia.FuncUI.DSL
 open Elmish
@@ -84,11 +88,13 @@ let viewFn (s: GameState) (d: Dispatch<Event>): IView =
   Panel.create [
     Panel.background "#504945"
   ]
+  
 ```
 
 
 * and Program.fs, which takes all of that and wraps in a program:
 ```fsharp
+
 module Cubicle.Program
 ...
 
@@ -115,6 +121,7 @@ module Program =
             .UsePlatformDetect()
             .UseSkia()
             .StartWithClassicDesktopLifetime(args)
+            
 ```
 
 
@@ -152,7 +159,9 @@ Program.mkSimple Update.initFn Update.updateFn View.viewFn
 |> Program.withHost this
 |> Program.withSubscription subscriptions
 |> Program.run
+
 ```
+
 
 Now, let's add player to our game. For now, it will include player's position and velocity:
 ```fsharp
@@ -172,11 +181,14 @@ let initFn (): GameState =
 let updateFn = function 
   | Tick -> fun (s: GameState) -> s
   | _ -> id
+  
 ```
+
 
 We also need to draw this player. For now, let it be just a small orange cube:
 
 ```fsharp
+
 let playerToPoints (resolution: Vector) (p: Player) = 
   let newPos = new Point(p.Position.X, resolution.Y - p.Position.Y)
   [
@@ -209,6 +221,7 @@ open Cubicle.Update
 
 open System.Threading.Tasks
 Task.Run(fun () -> Program.main [||])
+
 ```
 
 
@@ -217,17 +230,16 @@ So we can start our project in repl immediately by command like
 dotnet build && fsix --use repl.fsx
 ``
 
-Aaand, we messed up somewhere with polygons
-[pic of sandclock instead of cubes]
+Aaand, we messed up somewhere with polygons:
+![](videos/sandclock.png)
 
 Elmish is optimized to not update view if it wasn't changed, and as our update function does nothing, even if we modify it, it wont run new view function. So, let's make our update function do something.
 
-For modifying game state, I will use [Lenses]() - constructs which allow us to focus on, inspect and modify specific elements in complex nested structures. Here are some examples
-```fsharp
-
+For modifying game state, I will use [Lenses](https://fsprojects.github.io/FSharpPlus/lens.html) - constructs which allow us to focus on, inspect and modify specific elements in complex nested structures. Here are some examples:
 ```fsharp
 
 module Lenses = 
+
 
   [<AutoOpen>]
   module Player =
@@ -242,7 +254,6 @@ module Lenses =
           f s.Player <&> fun x -> { s with Player = x }
 
 ```
-
 So basically, lens is a pair of getter and setter for specific element in bigger type. We provided setter for player.velocity, player.position and state.player. Usually, such trivial templatish lenses are autogenerated, but I dont wanna mess here with code generators.
 
 Let's also make lenses to modify either X or Y in given vector:
@@ -250,6 +261,7 @@ Let's also make lenses to modify either X or Y in given vector:
 
 let inline _1v f (v: Vector) = f v.X <&> fun x -> new Vector(x, v.Y)
 let inline _2v f (v: Vector) = f v.Y <&> fun y -> new Vector(v.X, y)
+
 ```
 
 
@@ -258,6 +270,7 @@ Really nice feature about lenses is that you can compose them. Consider you want
 
 let posL = _player << _pos
 let velL = _player << _vel
+
 ```
 
 There are 2 important functions we gonna use a lot:
@@ -271,11 +284,10 @@ over (posL << _1v) ((+) 20.0)
 
 
 Let's now update our game logic to move on WASD:
-[video  wasd.webm]
+![](videos/wasd.png)
 
 And our render can be easily fixed by proper order of points. Now we can test it as our state updates every time we move:
-[video with shape render mira plz cut]
-
+![](videos/wasdFixed.webm)
 
 ## Adding physics
 
@@ -285,7 +297,6 @@ Ok, but moving by only changing position feels clunky. And we are making a platf
 Let's make player move based on velocity, not just statically update it's position:
 ```fsharp
 
-```fsharp
 module Physics = 
   let playerVeocity = 10.0
   let applyVel s = over posL ((+) s.Player.Velocity) s
@@ -298,36 +309,42 @@ let updateFn = function
   | KeyPressed Key.S -> over (velL << _2v) ((+) -playerVeocity)
   | KeyPressed Key.D -> over (velL << _1v) ((+) playerVeocity)
   | _ -> id
+
 ```
 
-[video]
+![](videos/spacemoving.webm)
 
-But there is no drag! Our game is not set in open space, so player should stop after moving button is released:
+But there is no drag! Player keeps moving like they'd do in space vacuum. Instead, let's stop player after moving button is released:
 ```fsharp
+
   | KeyReleased Key.W -> setl (velL << _2v) 0.0
   | KeyReleased Key.A -> setl (velL << _1v) 0.0 
   | KeyReleased Key.S -> setl (velL << _2v) 0.0
   | KeyReleased Key.D -> setl (velL << _1v) 0.0
+  
 ```
 
-[video]
+![](videos/fixedspacemoving.webm)
 
 
 For more natural moving, we should add drag. Oh and also gravity! 
 
 
 Gravity would work like that:
- 1. There is constant force/velocity g moving us downwards
- 2. If we are staying on the floor, it counteracts gravity
- 3. When player jumps, it's vertical velocity overcomes gravity, but gravity gradually returns back
+
+1. There is constant force/velocity g moving us downwards
+2. If we are staying on the floor, it counteracts gravity
+3. When player jumps, it's vertical velocity overcomes gravity, but gravity gradually returns back
 
 We also need to be sure that player can jump only when it touches the ground. So we'd need a flag for that:
 ```fsharp
+
 type Player = {
   Position: Vector
   Velocity: Vector
   Grounded: bool
 }
+
 ```
 And yeah, that sucks - as we modified player type, we cannot use hot reloading anymore, we need recompile and restart our project. So, sometimes static type system has it's downsides!
 
@@ -365,6 +382,7 @@ let updateFn = function
   | KeyReleased Key.S -> over (velL << _2v) ((+) (-2.0*g))
   | KeyReleased Key.D -> setl (velL << _1v) 0.0
   | _ -> id
+  
 ```
 
 
@@ -377,10 +395,12 @@ type Player = {
   Grounded: bool
   Drag: float
 }
+
 ```
 
 Drag applies only to side motions, so it can be represented as single float. We will create drag force only when player stops moving sideways. But when player starts moving, moving will compensate any drag so for simplification we can set it to zero:
 ```fsharp
+
       | KeyPressed Key.A -> setl (velL << _1v) -playerVelocity >> setl dragL 0
       | KeyPressed Key.D -> setl (velL << _1v) playerVelocity >> setl dragL 0
       | KeyReleased Key.A -> setl dragL -dragForce
@@ -428,6 +448,7 @@ type Player = {
   Grounded: bool
   Drag: float
 } with member this.GetHitbox = {Min = this.Position; Max = this.Position + playerSize}
+
 ```
 
 So now we can have abstraction like: 
@@ -450,6 +471,7 @@ let initFn (): GameState =
   { Player = {...}
     Platforms = [ mkPlatform (new Vector(100, 300)) 200
                   mkPlatform (new Vector(400, 400)) 150 ] }
+                  
 ```
 
 
@@ -457,6 +479,7 @@ let initFn (): GameState =
 Before writing collision code, let's firstly draw these platforms. Remember `playerToPoints` function? We can simply rewrite it to `hitboxToPoints`:
 
 ```fsharp
+
 let hitboxToPoints (resolution: Vector) (h: Hitbox) = 
   let hB = {
     Min = resolution - h.Min
@@ -468,14 +491,16 @@ let hitboxToPoints (resolution: Vector) (h: Hitbox) =
     new Point(h.Max.X, hB.Max.Y)
     new Point(h.Max.X, hB.Min.Y)
   ]
+  
 ```
 
 So, now we can see these platforms!
-[demo video]
+![](videos/showplatforms.webm)
 
 
 Ok, now let's implement collision. Firstly, we need to make collision detection:
 ```fsharp
+
 let inline collides h1 h2 =
     let a = getHitbox h1
     let b = getHitbox h2
@@ -483,10 +508,12 @@ let inline collides h1 h2 =
     a.Min.X < b.Max.X &&
     a.Max.Y > b.Min.Y &&
     a.Min.Y < b.Max.Y
+    
 ```
 
 Then, on every tick we will check every platform which collided with a player. If during collision player was falling on the platform from the top, it means player landed on it, so we'll set players Y to platforms floor and Player.Grounded to true. Otherwise, we will push player out of the platform, to the side from which player appeared:
 ```fsharp
+
 let checkCollision s = 
         let collidedPlatforms = s.Platforms |> List.filter (collides s.Player)
         let foldFn player platform = 
@@ -511,6 +538,7 @@ let checkCollision s =
 let updateFn = function 
   | Tick -> applyVel >> applyDrag >> applyG >> floorCheck >> checkCollision
   ...
+  
 ```
 
 I was struggling a lot with writing this function, but hot reloading helped a lot with this debugging. (I wont show another demo tho, as it'd be too boring to look how I 10+minutes debug one single function)
@@ -547,14 +575,17 @@ let getOffset (resolution: Vector) (p: Player) =
   let xOffset = if pPos.X >= halfRes.X then pPos.X - halfRes.X else pPos.X - halfRes.X
   let yOffset = if pPos.Y >= halfRes.Y then pPos.Y - yRes.Y else pPos.Y - yRes.Y
   new Vector(xOffset, yOffset)
+  
 ```
 
-[demo]
+![](videos/addCamera.webm)
 
 
 ## Adding textures
 
 Let's make our game pretty! 
+
+### Player
 
 We will start from the player. Our tilemap contains 4 player position, facing different directions. We will need to load bitmap, and then make image brush from it:
 ```fsharp
@@ -562,15 +593,14 @@ We will start from the player. Our tilemap contains 4 player position, facing di
   let playerDefault = playerMap |> ImageBrush
   playerDefault.SourceRect <- new RelativeRect(0.0, 0.0, 16.0, 16.0, RelativeUnit.Absolute)
 ```
+![](videos/addPlayerText.webm)
 
 
-[demo]
-
-Right after adding our player u can see its very blurry, that's because interpolation. We need to disable it:
+Right after adding our player you can see its very blurry, that's because interpolation. We need to disable it:
 ```fsharp
 Control.bitmapInterpolationMode BitmapInterpolationMode.None
 ```
-[demo]
+![](videos/removeInterpolation.webm)
 
 In the same way, we will add brushes for all player directions:
 ```fsharp
@@ -597,12 +627,14 @@ In the same way, we will add brushes for all player directions:
     let playerJump = playerMap |> ImageBrush
     playerJump.SourceRect <- new RelativeRect(16.0, 16.0, 16.0, 16.0, RelativeUnit.Absolute)
     playerJump
+
 ```
 
 playerLeft is mirrored playerRight, so we had to apply transform matrix to it
 
 And we'll choose what tile to use by checking player's velocity:
 ```fsharp
+
 let drawPlayer res offs (p: Player): IView = 
     let tile =
       match p.Velocity with
@@ -618,6 +650,7 @@ let drawPlayer res offs (p: Player): IView =
       Shapes.Polygon.points points
       Shapes.Polygon.fill tile
     ]
+
 ```
 Where `Vec2` is neat active pattern:
 ```fsharp
@@ -637,10 +670,14 @@ let drawMoon res =
       Shapes.Polygon.points points
       Shapes.Polygon.fill moonBrush
     ]
+
 ```
+
+### World 
 
 Clouds are a little bit trickier as we have only single 128x128 tile, and we need to spread them out. At first, let's add few clouds manually:
 ```fsharp
+
 module Clouds = 
     let cloudsMap = new Bitmap "Assets/clouds.png"
     let cloudScale = 4.0
@@ -668,11 +705,12 @@ module Clouds =
           drawCloud bigCloud2 300 300
         ] 
       ] :> IView
+
 ```
 
 
 However, clouds right now look too flat. Let's add parallax effect - all we need to do is provide offset multiplied by really small value:
-[demo]
+![](videos/paralax.webm)
 
 I also want clouds to drift and I realized I am too lazy to add all of them manually. So, they should be part of game state.
 ```fsharp
@@ -690,6 +728,7 @@ type GameState = {
   Platforms: Platforms.Platform list
   Clouds: Clouds.Cloud list
 }
+
 ```
 
 
@@ -710,6 +749,7 @@ We will generate platform like that:
       | Big -> 0.3
       | _ -> 1.0
     {Position = pos; Type = cloudType; Velocity = cloudVelocity * velocityScale}
+
 ```
 
 And teleport back clouds which went too far out of game scene:
@@ -720,22 +760,22 @@ And teleport back clouds which went too far out of game scene:
     if c.Position.X > cloudZone.Max.X then 
       {c with Position = setl _1v cloudZone.Min.X c.Position} 
     else c))
-
 ```
 
 So now it looks like this:
-[demo]
+![](videos/movingClouds.webm)
 
-We can also add glowing animation and gradient for nicer sky:
-[demo]
+We can also add glowing animation to the player and gradient for nicer sky:
+![](videos/gradient.webm)
 
-I've tried to add platforms in same way, by using TileMode functionality. And this when I realized I've should've use proper game framework and not an ui library:
-[demo]
+I've tried to add platforms in same way, by using built-in TileMode functionality. And this is when I realized I've should've use proper game framework and not an ui library:
+![](videos/brokenText.webm)
 
 
 No matter what I've tried, image kept moving alongside a camera. So, we'd need to use static images for each kind of platform. Let's modify platform type to be like this:
 
 ```fsharp
+
 type PlatformType = ShortPlatform | LongPlatform | SideWall | Floor
 type Platform = {
   Position: Vector
@@ -749,19 +789,27 @@ type Platform = {
     | SideWall -> {Min = this.Position; Max = this.Position + new Vector(32, 4096)}
 
   static member mk t x y = {Position = new Vector(x, y); Type = t}
+  
 ```
 
 And now it works:
+![](videos/textWork.png)
 
 by providing state updater like: 
 ```fsharp
-
 let liveEditPlatforms s = {s with Platforms = getPlatforms ()}
 ```
 
 we can in live edit create our level:
-[demo]
+![](videos/end.webm)
 
 
 
 That's it!
+
+---
+
+I was writing this game as a demo for fsix, but I really enjoyed the process of making it. It gave me so many nostalgic feelings, when I was writing very simmilar simple games as highschooler. So maybe, in the future I'll move this demo to [raylib-cs](https://www.raylib.com/), and implement some sort of ECS framework.
+
+See you!
+
