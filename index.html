@@ -16,7 +16,7 @@
 <li><a href="#interactive-development-in-f">Interactive development in F#</a>
 <ul>
 <li><a href="#what-is-a-repl-now-and-what-it-could-be">What is a REPL now and what it could be</a></li>
-<li><a href="#improving-f-repl">Improving f# repl</a></li>
+<li><a href="#improving-f-repl">Improving F# REPL</a></li>
 <li><a href="#creating-a-simple-platformer-game-in-f">Creating a simple platformer game in F#</a></li>
 <li><a href="#adding-player-and-basic-movement">Adding player and basic movement</a></li>
 <li><a href="#adding-physics">Adding physics</a></li>
@@ -24,6 +24,7 @@
 <li><a href="#adding-textures">Adding textures</a></li>
 </ul>
 </li>
+<li><a href="#references">References</a></li>
 </ul>
 
     </div>
@@ -31,12 +32,13 @@
   <div class="stackedit__right">
     <div class="stackedit__html">
       <h1 id="interactive-development-in-f">Interactive development in F#</h1>
+<p>Hi all, in this article I wanna show how you can use interactive programming techniques to write software in faster and more enjoyable way. Also, we are going to impement simple game in F# and take a look at</p>
 <h2 id="what-is-a-repl-now-and-what-it-could-be">What is a REPL now and what it could be</h2>
 <p>REPL (read-eval-print-loop) is a simple program which reads code entered by a user, evaluates it and prints back to the user. It allows user to actually interact with a language they’re working with: they can immediately see results of expressions they type, assign these expressions to variables and reuse variables in further expressions. So user can execute what they want step-by-step, quickly test new code, inspecting existing state, etc.</p>
 <p>Nowadays almost every language has some form of REPL. Usually, they are treated as minor addition to language implementation - as learning tool for beginner or a way to quickly test new ideas. Sometimes they are treated more seriously: <a href="https://jupyter.org/">jupiter-notebook</a>, for example, is a great and immensely popular tool for different kinds of scientific computations. But what if we could use such interactive tool for actual software development? Not only for small scripts or ‘drafty/sketchy??’ experiments, but real software?</p>
 <p>The bigger a software gets, the more painful and slow it becomes to debug and modify it. Compilation time increases, internal state gets more and more complicated and hard to reproduce. I actually got burned out from my previous job as to reproduce the tiniest bug i had to wait at least 5 minutes for compilation, few minutes of program start up, and then navigate through dozens of different windows and menus. And guess what feature is the most prominent in REPLs? That’s right, fast feedback loop! Wouldn’t it be great to execute program once in a repl, capture needed state and reevaluate needed function until it stops failing?</p>
 <p>A lot of REPLs already can do that. Entire family of LISP languages are known for their powerful REPLs. Moreover, REPLs were firstly introduced in early LISP implementations and term itself comes from minimal REPL definition written in lisp:</p>
-<pre class=" language-clojure"><code class="prism  language-clojure">(loop (print (eval (read))))
+<pre class=" language-lisp"><code class="prism  language-lisp">(loop (print (eval (read))))
 </code></pre>
 <p>Typical LISP repl has many features your average modern repl lacks:</p>
 <ul>
@@ -48,7 +50,7 @@
 Lisp machines were a pinnacle of such magic. All programs shared a single large address space, so user could inspect, evaluate or modify any function of any program on their computer. Instead of <code>sh</code> executing binaries, they had lisp repl executing lisp functions.</li>
 </ul>
 <p>One notable example of lisps is <a href="https://clojure.org/">Clojure</a>. It is modern language, with strong focus on functional programming which works on top of JVM. And good repl is <a href="https://clojure.org/guides/repl/introduction">one of it’s most compelling features</a>. And honestly, by discovering and trying out this language I fell in love with repl driven development. So I’ve started wondering - why not use same approach, but in my favorite F#?</p>
-<h2 id="improving-f-repl">Improving f# repl</h2>
+<h2 id="improving-f-repl">Improving F# REPL</h2>
 <p>For being actual development tool, dotnet fsi lacks 2 important features.</p>
 <ol>
 <li>Putting entire project into repl.<br>
@@ -57,10 +59,10 @@ fsi is designed to work with .fsx script files, not actual projects or solutions
 </ol>
 <p>First feature is easily solvable. As fsi supports loading of DDLs, you just need to reference all binaries of your program. And a lot of tools, like vscode-ionide, allow you to generate such references in a single command.</p>
 <p>But without second feature repl as dev tool loses it’s core benefit - fast feedback loop. How it even differs from regular edit-compile-run cycle if u need for every minor change recompile project, restart repl and re-reference all dlls?</p>
-<p>Modifying .net assembly in runtime is , thankfully, relatively easy, and there are many libraries, like <a href="">Harmony</a> that do this. Of course, there are still clr limitations as we cannot identify existing types, change function signatures, or modify generic functions.</p>
-<p>And to fix those limitations I’ve made <a href="">fsix</a>, a repl which contains these features as well as some additional niceties. In next chapter, I will demonstrate how repl driven development might increase your development speed and comfort.</p>
+<p>Modifying .net assembly in runtime is, thankfully, relatively easy, and there are many libraries, like <a href="https://github.com/pardeike/Harmony">Harmony</a> that do this. Of course, there are still clr limitations as we cannot identify existing types, change function signatures, or modify generic functions.</p>
+<p>And to fix those limitations I’ve made <a href="https://github.com/soweli-p/FsiX">fsix</a>, a repl which contains these features as well as some additional niceties. In next chapter, I will demonstrate how repl driven development might increase your development speed and comfort.</p>
 <h2 id="creating-a-simple-platformer-game-in-f">Creating a simple platformer game in F#</h2>
-<p>For demonstration lets create simple video game - because it’s fun and because it’s a perfect place where interactive programming really shines. We will use <a href="">Avalonia.FuncUI</a> for drawing and IO. Sure, this is UI library, not gamedev lib. But it is very simple, f# friendly, supports everything we need and has support for <a href="">Elmish</a> mve pattern, which is functional and transforms perfectly onto classical gameloop pattern.</p>
+<p>For demonstration lets create simple video game - because it’s fun and because it’s a perfect place where interactive programming really shines. We will use <a href="https://funcui.avaloniaui.net/">Avalonia.FuncUI</a> for drawing and IO. Sure, this is UI library, not gamedev lib. But it is very simple, f# friendly, supports everything we need and has support for <a href="https://elmish.github.io/elmish/">Elmish</a> MVU pattern, which is functional and transforms perfectly onto classical gameloop pattern.</p>
 <h3 id="basic-architecture">Basic architecture</h3>
 <p>Our project will contain 3 core files:</p>
 <ul>
@@ -214,9 +216,9 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
 <p>So we can start our project in repl immediately by command like<br>
 <code>dotnet build &amp;&amp; fsix --use repl.fsx</code></p>
 <p>Aaand, we messed up somewhere with polygons:<br>
-[demo]</p>
+<img src="videos/sandclock.png" alt=""></p>
 <p>Elmish is optimized to not update view if it wasn’t changed, and as our update function does nothing, even if we modify it, it wont run new view function. So, let’s make our update function do something.</p>
-<p>For modifying game state, I will use <a href="">Lenses</a> - constructs which allow us to focus on, inspect and modify specific elements in complex nested structures. Here are some examples:</p>
+<p>For modifying game state, I will use <a href="https://fsprojects.github.io/FSharpPlus/lens.html">Lenses</a> - constructs which allow us to focus on, inspect and modify specific elements in complex nested structures. Here are some examples:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
 <span class="token keyword">module</span> Lenses <span class="token operator">=</span> 
 
@@ -256,9 +258,12 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
 <pre class=" language-fsharp"><code class="prism  language-fsharp"><span class="token function">over</span> <span class="token punctuation">(</span>posL <span class="token operator">&lt;</span><span class="token operator">&lt;</span> _1v<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token operator">+</span><span class="token punctuation">)</span> <span class="token number">20.0</span><span class="token punctuation">)</span>
 </code></pre>
 <p>Let’s now update our game logic to move on WASD:<br>
-[video  wasd.webm]</p>
+<img src="videos/wasd.png" alt=""></p>
 <p>And our render can be easily fixed by proper order of points. Now we can test it as our state updates every time we move:<br>
-<img src="videos/miraplzcutoneortwomistakesshaperender.webm" alt=""></p>
+<video width="320" height="240" controls loop>
+<source	src="videos/wasdFixed.webm" type="video/webm">
+</video>
+</p>
 <h2 id="adding-physics">Adding physics</h2>
 <p>Ok, but moving by only changing position feels clunky. And we are making a platformer, so we definitely need to add gravity.(change)</p>
 <p>Let’s make player move based on velocity, not just statically update it’s position:</p>
@@ -277,8 +282,12 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
   <span class="token operator">|</span> _ <span class="token operator">-</span><span class="token operator">&gt;</span> id
 
 </code></pre>
-<p>[video]</p>
-<p>But there is no drag! Our game is not set in open space, so player should stop after moving button is released:</p>
+<p>
+<video width="320" height="240" controls loop>
+<source	src="videos/spacemoving.webm" type="video/webm">
+</video>
+</p>
+<p>But there is no drag! Player keeps moving like they’d do in space vacuum. Instead, let’s stop player after moving button is released:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
   <span class="token operator">|</span> KeyReleased Key<span class="token punctuation">.</span>W <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token function">setl</span> <span class="token punctuation">(</span>velL <span class="token operator">&lt;</span><span class="token operator">&lt;</span> _2v<span class="token punctuation">)</span> <span class="token number">0.0</span>
   <span class="token operator">|</span> KeyReleased Key<span class="token punctuation">.</span>A <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token function">setl</span> <span class="token punctuation">(</span>velL <span class="token operator">&lt;</span><span class="token operator">&lt;</span> _1v<span class="token punctuation">)</span> <span class="token number">0.0</span> 
@@ -286,7 +295,11 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
   <span class="token operator">|</span> KeyReleased Key<span class="token punctuation">.</span>D <span class="token operator">-</span><span class="token operator">&gt;</span> <span class="token function">setl</span> <span class="token punctuation">(</span>velL <span class="token operator">&lt;</span><span class="token operator">&lt;</span> _1v<span class="token punctuation">)</span> <span class="token number">0.0</span>
   
 </code></pre>
-<p>[video]</p>
+<p>
+<video width="320" height="240" controls loop>
+<source	src="videos/fixedspacemoving.webm" type="video/webm">
+</video>
+</p>
 <p>For more natural moving, we should add drag. Oh and also gravity!</p>
 <p>Gravity would work like that:</p>
 <ol>
@@ -428,7 +441,10 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
   
 </code></pre>
 <p>So, now we can see these platforms!<br>
-[demo video]</p>
+<video width="320" height="240" controls loop>
+<source	src="videos/showPlatforms.webm" type="video/webm">
+</video>
+</p>
 <p>Ok, now let’s implement collision. Firstly, we need to make collision detection:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
 <span class="token keyword">let</span> <span class="token keyword">inline</span> collides h1 h2 <span class="token operator">=</span>
@@ -498,19 +514,32 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
   <span class="token keyword">new</span> <span class="token class-name">Vector</span><span class="token punctuation">(</span>xOffset<span class="token punctuation">,</span> yOffset<span class="token punctuation">)</span>
   
 </code></pre>
-<p>[demo]</p>
+<p>
+<video width="320" height="240" controls loop>
+<source	src="videos/addCamera.webm" type="video/webm">
+</video>
+</p>
 <h2 id="adding-textures">Adding textures</h2>
 <p>Let’s make our game pretty!</p>
+<h3 id="player">Player</h3>
 <p>We will start from the player. Our tilemap contains 4 player position, facing different directions. We will need to load bitmap, and then make image brush from it:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">  <span class="token keyword">let</span> playerMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Bitmap</span> <span class="token string">"Assets/player.png"</span>
   <span class="token keyword">let</span> playerDefault <span class="token operator">=</span> playerMap <span class="token operator">|</span><span class="token operator">&gt;</span> ImageBrush
   playerDefault<span class="token punctuation">.</span>SourceRect <span class="token operator">&lt;</span><span class="token operator">-</span> <span class="token keyword">new</span> <span class="token class-name">RelativeRect</span><span class="token punctuation">(</span><span class="token number">0.0</span><span class="token punctuation">,</span> <span class="token number">0.0</span><span class="token punctuation">,</span> <span class="token number">16.0</span><span class="token punctuation">,</span> <span class="token number">16.0</span><span class="token punctuation">,</span> RelativeUnit<span class="token punctuation">.</span>Absolute<span class="token punctuation">)</span>
 </code></pre>
-<p>[demo]</p>
-<p>Right after adding our player u can see its very blurry, that’s because interpolation. We need to disable it:</p>
+<p>
+<video width="320" height="240" controls loop>
+<source	src="videos/addPlayerText.webm" type="video/webm">
+</video>
+</p>
+<p>Right after adding our player you can see its very blurry, that’s because interpolation. We need to disable it:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">Control<span class="token punctuation">.</span>bitmapInterpolationMode BitmapInterpolationMode<span class="token punctuation">.</span>None
 </code></pre>
-<p>[demo]</p>
+<p>
+<video width="320" height="240" controls loop>
+<source	src="videos/removeInterpolation.webm" type="video/webm">
+</video>
+</p>
 <p>In the same way, we will add brushes for all player directions:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
   <span class="token keyword">let</span> playerRight <span class="token operator">=</span> playerMap <span class="token operator">|</span><span class="token operator">&gt;</span> ImageBrush
@@ -574,6 +603,7 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
     <span class="token punctuation">]</span>
 
 </code></pre>
+<h3 id="world">World</h3>
 <p>Clouds are a little bit trickier as we have only single 128x128 tile, and we need to spread them out. At first, let’s add few clouds manually:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
 <span class="token keyword">module</span> Clouds <span class="token operator">=</span> 
@@ -606,7 +636,10 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
 
 </code></pre>
 <p>However, clouds right now look too flat. Let’s add parallax effect - all we need to do is provide offset multiplied by really small value:<br>
-[demo]</p>
+<video width="320" height="240" controls loop>
+<source	src="videos/paralax.webm" type="video/webm">
+</video>
+</p>
 <p>I also want clouds to drift and I realized I am too lazy to add all of them manually. So, they should be part of game state.</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
 <span class="token keyword">module</span> Clouds <span class="token operator">=</span> 
@@ -650,11 +683,20 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
     <span class="token keyword">else</span> c<span class="token punctuation">)</span><span class="token punctuation">)</span>
 </code></pre>
 <p>So now it looks like this:<br>
-[demo]</p>
-<p>We can also add glowing animation and gradient for nicer sky:<br>
-[demo]</p>
-<p>I’ve tried to add platforms in same way, by using TileMode functionality. And this when I realized I’ve should’ve use proper game framework and not an ui library:<br>
-[demo]</p>
+<video width="320" height="240" controls loop>
+<source	src="videos/movingClouds.webm" type="video/webm">
+</video>
+</p>
+<p>We can also add glowing animation to the player and gradient for nicer sky:<br>
+<video width="320" height="240" controls loop>
+<source	src="videos/gradient.webm" type="video/webm">
+</video>
+</p>
+<p>I’ve tried to add platforms in same way, by using built-in TileMode functionality. And this is when I realized I’ve should’ve use proper game framework and not an ui library:<br>
+<video width="320" height="240" controls loop>
+<source	src="videos/brokenText.webm" type="video/webm">
+</video>
+</p>
 <p>No matter what I’ve tried, image kept moving alongside a camera. So, we’d need to use static images for each kind of platform. Let’s modify platform type to be like this:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp">
 <span class="token keyword">type</span> PlatformType <span class="token operator">=</span> ShortPlatform <span class="token operator">|</span> LongPlatform <span class="token operator">|</span> SideWall <span class="token operator">|</span> Floor
@@ -672,13 +714,27 @@ Task<span class="token punctuation">.</span><span class="token function">Run</sp
   <span class="token keyword">static</span> <span class="token keyword">member</span> mk t x y <span class="token operator">=</span> <span class="token punctuation">{</span>Position <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Vector</span><span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">;</span> Type <span class="token operator">=</span> t<span class="token punctuation">}</span>
   
 </code></pre>
-<p>And now it works:</p>
+<p>And now it works:<br>
+<img src="videos/textWork.png" alt=""></p>
 <p>by providing state updater like:</p>
 <pre class=" language-fsharp"><code class="prism  language-fsharp"><span class="token keyword">let</span> liveEditPlatforms s <span class="token operator">=</span> <span class="token punctuation">{</span>s <span class="token keyword">with</span> Platforms <span class="token operator">=</span> <span class="token function">getPlatforms</span> <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
 </code></pre>
 <p>we can in live edit create our level:<br>
-[demo]</p>
+<video width="320" height="240" controls loop>
+<source	src="videos/end.webm" type="video/webm">
+</video>
+</p>
 <p>That’s it!</p>
+<h1 id="references">References</h1>
+<p>I was heavily inspired by these articles:</p>
+<ul>
+<li><a href="https://clojure.org/guides/repl/introduction">https://clojure.org/guides/repl/introduction</a></li>
+<li><a href="https://oli.me.uk/Blog+archive/2020/Conversational+software+development">https://oli.me.uk/Blog+archive/2020/Conversational+software+development</a></li>
+</ul>
+<p>Also, I really liked playing with <a href="https://shirakumo.github.io/trial/index.html">Trial Game Engine</a> and it encouraged me to showcase a game instead of something else. Check this game engine out! It is written in Lisp and also supports and encourages REPL driven development.</p>
+<hr>
+<p>I was writing this game as a demo for fsix, but I really enjoyed the process of making it. It gave me so many nostalgic feelings, when I was writing very simmilar simple games as highschooler. So maybe, in the future I’ll move this demo to <a href="https://www.raylib.com/">raylib-cs</a>, and implement some sort of ECS framework.</p>
+<p>See you!</p>
 
     </div>
   </div>

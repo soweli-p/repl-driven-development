@@ -1,5 +1,7 @@
 # Interactive development in F#
 
+Hi all, in this article I wanna show how you can use interactive programming techniques to write software in faster and more enjoyable way. Also, we are going to impement simple game in F# and take a look at 
+
 ## What is a REPL now and what it could be
 
   REPL (read-eval-print-loop) is a simple program which reads code entered by a user, evaluates it and prints back to the user. It allows user to actually interact with a language they're working with: they can immediately see results of expressions they type, assign these expressions to variables and reuse variables in further expressions. So user can execute what they want step-by-step, quickly test new code, inspecting existing state, etc.
@@ -807,7 +809,17 @@ we can in live edit create our level:
 
 That's it!
 
+# References
+
+I was heavily inspired by these articles:
+* https://clojure.org/guides/repl/introduction
+* https://oli.me.uk/Blog+archive/2020/Conversational+software+development
+
+Also, I really liked playing with [Trial Game Engine](https://shirakumo.github.io/trial/index.html) and it encouraged me to showcase a game instead of something else. Check this game engine out! It is written in Lisp and also supports and encourages REPL driven development.
+
+
 ---
+
 
 I was writing this game as a demo for fsix, but I really enjoyed the process of making it. It gave me so many nostalgic feelings, when I was writing very simmilar simple games as highschooler. So maybe, in the future I'll move this demo to [raylib-cs](https://www.raylib.com/), and implement some sort of ECS framework.
 
